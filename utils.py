@@ -2,39 +2,25 @@ import numpy as np
 from matplotlib import pyplot as plt
 import csv
 import math
+import pandas
 
 def plot_log(filename, show=True):
-    # load data
-    keys = []
-    values = []
-    with open(filename, 'r') as f:
-        reader = csv.DictReader(f)
-        for row in reader:
-            if keys == []:
-                for key, value in row.items():
-                    keys.append(key)
-                    values.append(float(value))
-                continue
 
-            for _, value in row.items():
-                values.append(float(value))
-
-        values = np.reshape(values, newshape=(-1, len(keys)))
-        values[:,0] += 1
+    data = pandas.read_csv(filename)
 
     fig = plt.figure(figsize=(4,6))
     fig.subplots_adjust(top=0.95, bottom=0.05, right=0.95)
     fig.add_subplot(211)
-    for i, key in enumerate(keys):
+    for key in data.keys():
         if key.find('loss') >= 0 and not key.find('val') >= 0:  # training loss
-            plt.plot(values[:, 0], values[:, i], label=key)
+            plt.plot(data['epoch'].values, data[key].values, label=key)
     plt.legend()
     plt.title('Training loss')
 
     fig.add_subplot(212)
-    for i, key in enumerate(keys):
+    for key in data.keys():
         if key.find('acc') >= 0:  # acc
-            plt.plot(values[:, 0], values[:, i], label=key)
+            plt.plot(data['epoch'].values, data[key].values, label=key)
     plt.legend()
     plt.title('Training and validation accuracy')
 
@@ -43,10 +29,16 @@ def plot_log(filename, show=True):
         plt.show()
 
 
-def combine_images(generated_images):
+def combine_images(generated_images, height=None, width=None):
     num = generated_images.shape[0]
-    width = int(math.sqrt(num))
-    height = int(math.ceil(float(num)/width))
+    if width is None and height is None:
+        width = int(math.sqrt(num))
+        height = int(math.ceil(float(num)/width))
+    elif width is not None and height is None:  # height not given
+        height = int(math.ceil(float(num)/width))
+    elif height is not None and width is None:  # width not given
+        width = int(math.ceil(float(num)/height))
+
     shape = generated_images.shape[1:3]
     image = np.zeros((height*shape[0], width*shape[1]),
                      dtype=generated_images.dtype)
